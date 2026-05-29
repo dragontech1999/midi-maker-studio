@@ -48,11 +48,9 @@ Installers are written to `release-v130/`. See [docs/BUILD-STATUS.md](docs/BUILD
 | `MIDI Maker Studio v1.3.0 Portable.exe` | Double-click to run — no install |
 | `MIDI Maker Studio Setup 1.3.0.exe` | Full installer with shortcuts |
 
-### macOS — incomplete
+### macOS — CI builds (unsigned)
 
-**No macOS `.dmg` is included in this repository yet.** Development and Windows builds were done on Windows; macOS packaging requires a Mac or GitHub Actions.
-
-To build on GitHub: **Actions → Build Executables → Run workflow**, then download the **MIDI-Maker-Studio-macOS** artifact when the job succeeds.
+Download `.dmg` files from **Actions → Build Executables → MIDI-Maker-Studio-macOS** artifact. Not code-signed or notarized yet.
 
 Exports are saved to `Documents/MIDI Maker Studio/exports/`.
 

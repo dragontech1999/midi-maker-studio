@@ -12,32 +12,20 @@ Built locally on Windows. After `npm run electron:build:win`, installers are wri
 
 These binaries are **not committed to git** (see `.gitignore`). Download them from GitHub Releases after tagging, or build locally.
 
-## macOS — incomplete
+## macOS — built via GitHub Actions (unsigned)
 
-**No macOS `.dmg` has been produced yet.** Apple requires code signing and packaging on a Mac; this project was developed and built on Windows.
+**No macOS `.dmg` is committed to git.** CI on `macos-latest` produces unsigned DMG artifacts after each push to `main` or manual workflow run.
 
-What is included in the repository:
+Latest successful build: [Actions run](https://github.com/dragontech1999/midi-maker-studio/actions) → download **MIDI-Maker-Studio-macOS** artifact.
 
-- Full macOS target configuration in `package.json` (`electron-builder --mac`, universal x64 + arm64 DMG)
-- GitHub Actions job `build-mac` in `.github/workflows/build.yml` (runs on `macos-latest`)
+| Artifact | Description |
+|----------|-------------|
+| `MIDI Maker Studio-1.3.0.dmg` | Intel (x64) |
+| `MIDI Maker Studio-1.3.0-arm64.dmg` | Apple Silicon |
 
-### How to produce the macOS build
-
-1. Push this repository to GitHub.
-2. Open **Actions → Build Executables → Run workflow** (or push a tag like `v1.3.0`).
-3. When `build-mac` finishes, download the **MIDI-Maker-Studio-macOS** artifact (`.dmg` files).
-
-Alternatively, on a Mac:
+Local build on a Mac:
 
 ```bash
 npm ci
 npm run electron:build:mac
 ```
-
-Output: `release-v130/*.dmg`
-
-### Known gaps
-
-- macOS CI builds DMG artifacts but may fail at the publish step without `--publish never` (fixed in build scripts).
-- First CI run failed on 256×256 icon; source now uses 512×512 for `build/icon.png`.
-- Code signing / notarization are not configured (unsigned builds may require Gatekeeper override).
