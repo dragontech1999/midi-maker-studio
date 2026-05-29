@@ -1,0 +1,44 @@
+name: Build Executables
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main, master]
+    tags:
+      - 'v*'
+
+jobs:
+  build-win:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run electron:build:win
+      - uses: actions/upload-artifact@v4
+        with:
+          name: MIDI-Maker-Studio-Windows
+          path: |
+            release-v130/MIDI Maker Studio v*.exe
+            release-v130/MIDI Maker Studio Setup *.exe
+
+  build-mac:
+    runs-on: macos-latest
+    # macOS DMG not yet verified — first successful run will publish artifacts
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run electron:build:mac
+      - uses: actions/upload-artifact@v4
+        if: success()
+        with:
+          name: MIDI-Maker-Studio-macOS
+          path: release-v130/*.dmg

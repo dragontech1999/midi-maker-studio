@@ -1,0 +1,11 @@
+node_modules/
+dist/
+dist-electron/
+release/
+release-v*/
+.tools/
+*.log
+.DS_Store
+Thumbs.db
+.env
+.env.*
