@@ -10,7 +10,7 @@ Built locally on Windows. After `npm run electron:build:win`, installers are wri
 | `MIDI Maker Studio Setup 1.3.0.exe` | NSIS installer |
 | `win-unpacked/MIDI Maker Studio.exe` | Unpacked app |
 
-These binaries are **not committed to git** (see `.gitignore`). Download them from [GitHub Releases](https://github.com) after tagging, or build locally.
+These binaries are **not committed to git** (see `.gitignore`). Download them from GitHub Releases after tagging, or build locally.
 
 ## macOS — incomplete
 
