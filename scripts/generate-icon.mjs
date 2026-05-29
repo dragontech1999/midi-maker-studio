@@ -22,6 +22,6 @@ for (const size of sizes) {
 const png256 = fs.readFileSync(path.join(buildDir, 'icon-256.png'))
 const ico = await pngToIco(png256)
 fs.writeFileSync(path.join(buildDir, 'icon.ico'), ico)
-fs.copyFileSync(path.join(buildDir, 'icon-256.png'), path.join(buildDir, 'icon.png'))
+fs.copyFileSync(path.join(buildDir, 'icon-512.png'), path.join(buildDir, 'icon.png'))
 
 console.log('Generated build/icon.ico and build/icon.png')
