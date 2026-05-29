@@ -38,5 +38,6 @@ Output: `release-v130/*.dmg`
 
 ### Known gaps
 
-- macOS CI first run failed: `build/icon.png` must be at least 512×512 for DMG packaging (fixed in source; re-run workflow after push).
+- macOS CI builds DMG artifacts but may fail at the publish step without `--publish never` (fixed in build scripts).
+- First CI run failed on 256×256 icon; source now uses 512×512 for `build/icon.png`.
 - Code signing / notarization are not configured (unsigned builds may require Gatekeeper override).

@@ -27,8 +27,6 @@ jobs:
 
   build-mac:
     runs-on: macos-latest
-    # macOS DMG not yet verified — first successful run will publish artifacts
-    continue-on-error: true
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4

@@ -11,9 +11,9 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "icons": "node scripts/generate-icon.mjs",
-    "electron:build": "npm run icons && tsc -b && vite build && electron-builder",
-    "electron:build:win": "npm run icons && tsc -b && vite build && electron-builder --win",
-    "electron:build:mac": "npm run icons && tsc -b && vite build && electron-builder --mac",
+    "electron:build": "npm run icons && tsc -b && vite build && electron-builder --publish never",
+    "electron:build:win": "npm run icons && tsc -b && vite build && electron-builder --win --publish never",
+    "electron:build:mac": "npm run icons && tsc -b && vite build && electron-builder --mac --publish never",
     "preview": "vite preview"
   },
   "build": {
