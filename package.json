@@ -25,10 +25,12 @@
     },
     "files": [
       "dist/**/*",
-      "dist-electron/**/*"
+      "dist-electron/**/*",
+      "!dist/samples/**"
     ],
     "extraResources": [
-      { "from": "build/icon.png", "to": "icon.png" }
+      { "from": "build/icon.png", "to": "icon.png" },
+      { "from": "public/samples", "to": "samples" }
     ],
     "forceCodeSigning": false,
     "win": {

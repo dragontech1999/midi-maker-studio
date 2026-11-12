@@ -56,7 +56,7 @@ export const GENRES: GenreProfile[] = [
     drumStyle: 'four-on-floor-lite',
     bassStyle: 'root-fifth',
     melodyStyle: 'hook-focused',
-    instruments: { drums: 0, bass: 33, chords: 0, melody: 81, pad: 89, arpeggio: 46 },
+    instruments: { drums: 0, bass: 33, chords: 25, melody: 4, pad: 89, arpeggio: 25 },
     swing: 0,
     velocityRange: [60, 110],
     trackRoles: ['drums', 'bass', 'chords', 'melody', 'pad'],
@@ -118,7 +118,7 @@ export const GENRES: GenreProfile[] = [
     bassStyle: 'sub-808',
     melodyStyle: 'sparse-motif',
     instruments: { drums: 0, bass: 38, chords: 4, melody: 81, pad: 89 },
-    swing: 0.08,
+    swing: 0.22,
     velocityRange: [50, 100],
     trackRoles: ['drums', 'bass', 'chords', 'melody', 'pad'],
   },
@@ -145,8 +145,8 @@ export const GENRES: GenreProfile[] = [
     ],
     drumStyle: 'four-on-floor',
     bassStyle: 'sidechain-groove',
-    melodyStyle: 'arpeggiated',
-    instruments: { drums: 0, bass: 38, chords: 81, melody: 81, pad: 89, arpeggio: 81 },
+    melodyStyle: 'hook-focused',
+    instruments: { drums: 0, bass: 38, chords: 16, melody: 81, pad: 89, arpeggio: 81 },
     swing: 0,
     velocityRange: [55, 105],
     trackRoles: ['drums', 'bass', 'chords', 'arpeggio', 'pad', 'melody'],
@@ -215,9 +215,9 @@ export const GENRES: GenreProfile[] = [
     defaultScale: 'dorian',
     timeSignature: [4, 4],
     progressions: [
-      ['ii', 'V', 'I', 'VI'],
-      ['I', 'vi', 'ii', 'V'],
-      ['iii', 'vi', 'ii', 'V'],
+      ['ii7', 'V7', 'i7', 'IV7'],
+      ['i7', 'IV7', 'ii7', 'V7'],
+      ['iii7', 'vi7', 'ii7', 'V7'],
     ],
     sectionTemplate: [
       { type: 'intro', bars: 4, energy: 0.4, density: 0.45 },
@@ -345,7 +345,7 @@ export const GENRES: GenreProfile[] = [
     drumStyle: 'four-on-floor',
     bassStyle: 'rolling-sub',
     melodyStyle: 'uplifting-lead',
-    instruments: { drums: 0, bass: 38, chords: 81, melody: 81, arpeggio: 46, pad: 89 },
+    instruments: { drums: 0, bass: 38, chords: 81, melody: 81, arpeggio: 80, pad: 89 },
     swing: 0,
     velocityRange: [55, 110],
     trackRoles: ['drums', 'bass', 'arpeggio', 'melody', 'pad'],
@@ -429,8 +429,8 @@ export const GENRES: GenreProfile[] = [
     drumStyle: 'country-shuffle',
     bassStyle: 'root-fifth',
     melodyStyle: 'hook-focused',
-    instruments: { drums: 0, bass: 33, chords: 25, melody: 73, strings: 48 },
-    swing: 0.15,
+    instruments: { drums: 0, bass: 33, chords: 25, melody: 40, strings: 48 },
+    swing: 0.28,
     velocityRange: [55, 105],
     trackRoles: ['drums', 'bass', 'chords', 'melody', 'strings'],
   },
@@ -458,7 +458,7 @@ export const GENRES: GenreProfile[] = [
     drumStyle: 'orchestral-perc',
     bassStyle: 'contrabass',
     melodyStyle: 'classical-theme',
-    instruments: { drums: 0, bass: 43, chords: 48, melody: 73, strings: 48 },
+    instruments: { drums: 0, bass: 43, chords: 0, melody: 73, strings: 48 },
     swing: 0,
     velocityRange: [35, 100],
     trackRoles: ['strings', 'melody', 'chords', 'bass'],
@@ -483,7 +483,7 @@ export const GENRES: GenreProfile[] = [
     drumStyle: 'minimal-perc',
     bassStyle: 'drone-low',
     melodyStyle: 'atmospheric',
-    instruments: { drums: 0, bass: 38, chords: 89, melody: 88, pad: 89 },
+    instruments: { drums: 0, bass: 38, chords: 0, melody: 88, pad: 89 },
     swing: 0,
     velocityRange: [30, 80],
     trackRoles: ['pad', 'melody', 'bass', 'chords'],
@@ -508,9 +508,9 @@ export const GENRES: GenreProfile[] = [
       { type: 'outro', bars: 4, energy: 0.4, density: 0.35 },
     ],
     drumStyle: 'one-drop',
-    bassStyle: 'syncopated-funk',
+    bassStyle: 'one-drop',
     melodyStyle: 'hook-focused',
-    instruments: { drums: 0, bass: 33, chords: 24, melody: 76, pad: 89 },
+    instruments: { drums: 0, bass: 33, chords: 27, melody: 16, pad: 89 },
     swing: 0.1,
     velocityRange: [50, 100],
     trackRoles: ['drums', 'bass', 'chords', 'melody'],
@@ -535,9 +535,9 @@ export const GENRES: GenreProfile[] = [
       { type: 'outro', bars: 4, energy: 0.45, density: 0.4 },
     ],
     drumStyle: 'latin-clave',
-    bassStyle: 'syncopated-funk',
+    bassStyle: 'tumbao',
     melodyStyle: 'hook-focused',
-    instruments: { drums: 0, bass: 33, chords: 24, melody: 73, strings: 48 },
+    instruments: { drums: 0, bass: 33, chords: 24, melody: 56, strings: 48 },
     swing: 0.08,
     velocityRange: [55, 110],
     trackRoles: ['drums', 'bass', 'chords', 'melody', 'strings'],
@@ -603,19 +603,23 @@ export function getGenreById(id: string): GenreProfile {
   return GENRES.find((g) => g.id === id) ?? GENRES[0]!
 }
 
-export function parseRomanNumeral(roman: string): { degree: number; quality?: ChordQuality } {
+export function parseRomanNumeral(roman: string): { degree: number; quality?: ChordQuality; flat: boolean } {
+  const flat = roman.startsWith('b')
+  const body = flat ? roman.slice(1) : roman
+  const lower = body.toLowerCase()
+  let quality: ChordQuality | undefined
+  if (lower.includes('maj7')) quality = 'maj7'
+  else if (body.includes('7') && body === body.toUpperCase()) quality = 'dom7'
+  else if (body.includes('7')) quality = 'min7'
+  else if (body.includes('°')) quality = 'dim'
+  else {
+    const letters = body.replace(/[^A-Za-z]/g, '')
+    quality = letters === letters.toLowerCase() ? 'minor' : 'major'
+  }
+  const base = body.replace(/maj7|°|\+|7/g, '')
   const map: Record<string, number> = {
     I: 1, II: 2, III: 3, IV: 4, V: 5, VI: 6, VII: 7,
     i: 1, ii: 2, iii: 3, iv: 4, v: 5, vi: 6, vii: 7,
-    bII: 2, bIII: 3, bVI: 6, bVII: 7,
   }
-  const base = roman.replace(/[°7+]/g, '')
-  const degree = map[base] ?? 1
-  let quality: ChordQuality | undefined
-  if (roman.includes('7') && roman === roman.toUpperCase()) quality = 'dom7'
-  else if (roman.includes('7')) quality = 'min7'
-  else if (roman.includes('°')) quality = 'dim'
-  else if (roman === roman.toLowerCase() && !roman.startsWith('b')) quality = 'minor'
-  else if (roman.startsWith('b')) quality = 'major'
-  return { degree, quality }
+  return { degree: map[base] ?? 1, quality, flat }
 }

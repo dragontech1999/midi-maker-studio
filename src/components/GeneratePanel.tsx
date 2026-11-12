@@ -68,7 +68,7 @@ export function GeneratePanel({
     <div className="generate-panel">
       <h2 className="panel-title">Generate Song</h2>
       <p className="panel-desc">
-        Google Magenta AI with offline model support, connection checks, and procedural fallback.
+        Each genre writes its own drum groove, bass line, chords, and melody. Playback uses sampled drums, bass, guitar, and the other instruments on the tracks.
       </p>
 
       <ModelPanel

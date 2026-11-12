@@ -25,6 +25,16 @@ protocol.registerSchemesAsPrivileged([
       stream: true,
     },
   },
+  {
+    scheme: 'mms-sample',
+    privileges: {
+      standard: true,
+      secure: true,
+      supportFetchAPI: true,
+      corsEnabled: true,
+      stream: true,
+    },
+  },
 ])
 
 let mainWindow: BrowserWindow | null = null
@@ -87,12 +97,26 @@ app.whenReady().then(() => {
     }
   })
 
+  protocol.registerFileProtocol('mms-sample', (request, callback) => {
+    try {
+      const url = new URL(request.url)
+      const rel = decodeURIComponent(url.pathname).replace(/^\/+/, '')
+      const base = app.isPackaged
+        ? path.join(process.resourcesPath, 'samples')
+        : path.join(app.getAppPath(), 'public', 'samples')
+      callback({ path: path.normalize(path.join(base, rel)) })
+    } catch (err) {
+      console.error('mms-sample protocol error:', err)
+      callback({ error: -2 })
+    }
+  })
+
   session.defaultSession.webRequest.onHeadersReceived((details, callback) => {
     callback({
       responseHeaders: {
         ...details.responseHeaders,
         'Content-Security-Policy': [
-          "default-src 'self' 'unsafe-inline' 'unsafe-eval' data: blob: mms-model: https://storage.googleapis.com https://cdn.jsdelivr.net; connect-src 'self' mms-model: https://storage.googleapis.com https://cdn.jsdelivr.net data: blob:; img-src 'self' data: blob:; media-src 'self' data: blob:;",
+          "default-src 'self' 'unsafe-inline' 'unsafe-eval' data: blob: mms-model: mms-sample: https://storage.googleapis.com https://cdn.jsdelivr.net; connect-src 'self' mms-model: mms-sample: https://storage.googleapis.com https://cdn.jsdelivr.net data: blob:; img-src 'self' data: blob:; media-src 'self' data: blob: mms-sample:;",
         ],
       },
     })

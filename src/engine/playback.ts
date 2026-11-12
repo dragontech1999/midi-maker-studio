@@ -1,17 +1,38 @@
 import * as Tone from 'tone'
-import type { Composition, Track, TransportState } from '../types'
+import type { Composition, TransportState } from '../types'
 import { beatsPerBar } from './musicTheory'
+import {
+  drumUrls,
+  PROGRAM_SAMPLES,
+  sampleBaseUrl,
+  urlsForProgram,
+} from './sampleLibrary'
+
+const ROLE_GAIN: Record<string, number> = {
+  drums: 1.15,
+  bass: 1.05,
+  chords: 0.82,
+  melody: 0.9,
+  arpeggio: 0.62,
+  pad: 0.5,
+  strings: 0.68,
+  brass: 0.72,
+  lead: 0.74,
+}
 
 export class PlaybackEngine {
-  private synths = new Map<string, Tone.PolySynth>()
-  private drumKit: Tone.MembraneSynth | null = null
-  private noiseSynth: Tone.NoiseSynth | null = null
-  private metalSynth: Tone.MetalSynth | null = null
+  private pitched = new Map<number, Promise<Tone.Sampler>>()
+  private drums: Promise<Tone.Sampler> | null = null
   private composition: Composition | null = null
   private _state: TransportState = 'stopped'
   private onStateChange?: (state: TransportState) => void
   private onPositionChange?: (bar: number) => void
   private positionInterval: ReturnType<typeof setInterval> | null = null
+  private audioReady: Promise<void> | null = null
+  private limiter: Tone.Limiter | null = null
+  private reverb: Tone.Reverb | null = null
+  private musicBus: Tone.Gain | null = null
+  private drumBus: Tone.Gain | null = null
 
   constructor(callbacks?: {
     onStateChange?: (state: TransportState) => void
@@ -30,41 +51,81 @@ export class PlaybackEngine {
     this.onStateChange?.(state)
   }
 
-  async init(): Promise<void> {
-    await Tone.start()
+  private async init(): Promise<void> {
+    if (!this.audioReady) {
+      this.audioReady = (async () => {
+        await Tone.start()
+        this.limiter = new Tone.Limiter(-1.5).toDestination()
+        this.reverb = new Tone.Reverb({ decay: 1.5, wet: 0.14, preDelay: 0.01 })
+        await this.reverb.generate()
+        this.reverb.connect(this.limiter)
+        this.musicBus = new Tone.Gain(0.9).connect(this.reverb)
+        this.drumBus = new Tone.Gain(1).connect(this.limiter)
+      })()
+    }
+    await this.audioReady
   }
 
-  private getOrCreateSynth(track: Track): Tone.PolySynth {
-    let synth = this.synths.get(track.id)
-    if (!synth) {
-      if (track.role === 'drums') {
-        if (!this.drumKit) {
-          this.drumKit = new Tone.MembraneSynth({
-            envelope: { attack: 0.001, decay: 0.2, sustain: 0, release: 0.1 },
-          }).toDestination()
-          this.noiseSynth = new Tone.NoiseSynth({
-            envelope: { attack: 0.001, decay: 0.1, sustain: 0, release: 0.05 },
-          }).toDestination()
-          this.metalSynth = new Tone.MetalSynth({
-            envelope: { attack: 0.001, decay: 0.1, release: 0.01 },
-            harmonicity: 5.1,
-            modulationIndex: 32,
-            resonance: 4000,
-            octaves: 1.5,
-          }).toDestination()
-        }
-        synth = new Tone.PolySynth(Tone.Synth).toDestination()
-        synth.volume.value = -Infinity
-      } else {
-        synth = new Tone.PolySynth(Tone.Synth, {
-          oscillator: { type: track.role === 'bass' ? 'triangle' : 'sine' },
-          envelope: { attack: 0.02, decay: 0.2, sustain: 0.6, release: 0.8 },
-        }).toDestination()
-        synth.volume.value = Tone.gainToDb(track.volume)
-      }
-      this.synths.set(track.id, synth)
+  private loadSampler(
+    folder: string,
+    urls: Record<string, string>,
+    attack: number,
+    release: number,
+    destination: Tone.ToneAudioNode,
+  ): Promise<Tone.Sampler> {
+    return new Promise((resolve, reject) => {
+      const sampler = new Tone.Sampler({
+        urls,
+        baseUrl: sampleBaseUrl(folder),
+        attack,
+        release,
+        curve: 'exponential',
+        onload: () => resolve(sampler),
+        onerror: (error) => reject(error),
+      })
+      sampler.connect(destination)
+    })
+  }
+
+  private pitchedSampler(program: number): Promise<Tone.Sampler> {
+    const existing = this.pitched.get(program)
+    if (existing) return existing
+    const known = PROGRAM_SAMPLES[program] ? program : 0
+    const spec = PROGRAM_SAMPLES[known]!
+    const created = this.loadSampler(
+      spec.folder,
+      urlsForProgram(known),
+      spec.attack,
+      spec.release,
+      this.musicBus!,
+    ).catch((error) => {
+      this.pitched.delete(program)
+      throw error
+    })
+    this.pitched.set(program, created)
+    return created
+  }
+
+  private drumSampler(): Promise<Tone.Sampler> {
+    if (!this.drums) {
+      this.drums = this.loadSampler('synth_drum', drumUrls(), 0.001, 0.55, this.drumBus!)
     }
-    return synth
+    return this.drums
+  }
+
+  private async prepare(composition: Composition): Promise<void> {
+    await this.init()
+    const programs = new Set<number>()
+    let needsDrums = false
+    for (const track of composition.tracks) {
+      if (track.notes.length === 0) continue
+      if (track.role === 'drums') needsDrums = true
+      else programs.add(track.instrument)
+    }
+    await Promise.all([
+      ...[...programs].map((program) => this.pitchedSampler(program)),
+      needsDrums ? this.drumSampler() : Promise.resolve(),
+    ])
   }
 
   load(composition: Composition): void {
@@ -73,59 +134,40 @@ export class PlaybackEngine {
     Tone.getTransport().bpm.value = composition.bpm
   }
 
-  private playDrumNote(pitch: number, time: number, velocity: number): void {
-    const vel = velocity / 127
-    if (pitch <= 40) {
-      this.drumKit?.triggerAttackRelease('C1', '8n', time, vel)
-    } else if (pitch <= 45) {
-      this.noiseSynth?.triggerAttackRelease('16n', time, vel * 0.8)
-    } else {
-      this.metalSynth?.triggerAttackRelease('32n', time, vel * 0.5)
-    }
-  }
-
-  private scheduleComposition(): void {
+  private scheduleComposition(drums: Tone.Sampler, byProgram: Map<number, Tone.Sampler>): void {
     if (!this.composition) return
 
     const comp = this.composition
     const secondsPerBeat = 60 / comp.bpm
     const bpb = beatsPerBar(comp.timeSignature)
     const totalDuration = comp.totalBars * bpb * secondsPerBeat
+    const soloed = comp.tracks.some((t) => t.solo)
 
     for (const track of comp.tracks) {
-      if (track.muted) continue
-      const hasSolo = comp.tracks.some((t) => t.solo)
-      if (hasSolo && !track.solo) continue
+      if (track.muted || (soloed && !track.solo)) continue
+      const gain = (ROLE_GAIN[track.role] ?? 0.8) * track.volume
+      const sampler = track.role === 'drums' ? drums : byProgram.get(track.instrument)
+      if (!sampler) continue
 
       for (const note of track.notes) {
         const startTime = note.time * secondsPerBeat
-        const duration = note.duration * secondsPerBeat
-        const vel = note.velocity / 127
-
-        if (track.role === 'drums') {
-          Tone.getTransport().schedule((t) => {
-            this.playDrumNote(note.pitch, t, note.velocity)
-          }, startTime)
-        } else {
-          const synth = this.getOrCreateSynth(track)
-          const freq = Tone.Frequency(note.pitch, 'midi').toFrequency()
-          Tone.getTransport().schedule((t) => {
-            synth.triggerAttackRelease(freq, duration, t, vel)
-          }, startTime)
-        }
+        const duration = Math.max(0.05, note.duration * secondsPerBeat)
+        const vel = Math.max(0.05, Math.min(1, (note.velocity / 127) * gain))
+        const name = Tone.Frequency(note.pitch, 'midi').toNote()
+        Tone.getTransport().schedule((t) => {
+          sampler.triggerAttackRelease(name, duration, t, vel)
+        }, startTime)
       }
     }
 
     Tone.getTransport().schedule(() => {
-      if (this._state === 'playing') {
-        this.stop()
-      }
+      if (this._state === 'playing') this.stop()
     }, totalDuration)
   }
 
   async play(): Promise<void> {
-    await this.init()
     if (!this.composition) return
+    await this.prepare(this.composition)
 
     if (this._state === 'paused') {
       Tone.getTransport().start()
@@ -134,9 +176,16 @@ export class PlaybackEngine {
       return
     }
 
+    const programs = new Set(this.composition.tracks.filter((t) => t.role !== 'drums').map((t) => t.instrument))
+    const byProgram = new Map<number, Tone.Sampler>()
+    await Promise.all([...programs].map(async (program) => {
+      byProgram.set(program, await this.pitchedSampler(program))
+    }))
+    const drums = await this.drumSampler()
+
     Tone.getTransport().cancel()
     Tone.getTransport().seconds = 0
-    this.scheduleComposition()
+    this.scheduleComposition(drums, byProgram)
     Tone.getTransport().start()
     this.setState('playing')
     this.startPositionTracking()
@@ -186,11 +235,16 @@ export class PlaybackEngine {
 
   dispose(): void {
     this.stop()
-    for (const synth of this.synths.values()) synth.dispose()
-    this.drumKit?.dispose()
-    this.noiseSynth?.dispose()
-    this.metalSynth?.dispose()
-    this.synths.clear()
+    for (const pending of this.pitched.values()) {
+      void pending.then((sampler) => sampler.dispose())
+    }
+    if (this.drums) void this.drums.then((sampler) => sampler.dispose())
+    this.pitched.clear()
+    this.drums = null
+    this.reverb?.dispose()
+    this.limiter?.dispose()
+    this.musicBus?.dispose()
+    this.drumBus?.dispose()
   }
 }
 

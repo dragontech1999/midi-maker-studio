@@ -139,15 +139,18 @@ export function degreeToChord(
   mode: ScaleMode,
   degree: number,
   qualityOverride?: ChordQuality,
+  flat = false,
 ): Chord {
   const diatonic = getDiatonicChords(root, mode)
   const idx = ((degree - 1) % 7 + 7) % 7
-  const chord = { ...diatonic[idx]! }
-  if (qualityOverride) {
-    const rebuilt = buildChord(chord.root, qualityOverride)
-    rebuilt.roman = chord.roman
-    return rebuilt
-  }
+  const scaleNotes = getScaleNotes(root, mode, 4)
+  let rootMidi = scaleNotes[idx]!
+  const majorIntervals = [0, 2, 4, 5, 7, 9, 11]
+  const modeInterval = ((rootMidi - noteToMidi(root, 4)) % 12 + 12) % 12
+  if (flat && modeInterval >= majorIntervals[idx]!) rootMidi -= 1
+  const quality = qualityOverride ?? diatonic[idx]!.quality
+  const chord = buildChord(rootMidi, quality)
+  chord.roman = diatonic[idx]!.roman
   return chord
 }
 

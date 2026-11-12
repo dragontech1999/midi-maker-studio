@@ -33,7 +33,7 @@ export function TrackList({
           <div className="track-color" style={{ backgroundColor: track.color }} />
           <div className="track-info">
             <span className="track-name">{track.name}</span>
-            <span className="track-instrument">{getInstrumentName(track.instrument)}</span>
+            <span className="track-instrument">{track.role === 'drums' ? 'Drum Kit' : getInstrumentName(track.instrument)}</span>
             <span className="track-notes">{track.notes.length} notes</span>
           </div>
           <div className="track-controls" onClick={(e) => e.stopPropagation()}>

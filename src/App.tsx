@@ -96,12 +96,11 @@ export default function App() {
                   <span className="welcome-icon">🎼</span>
                   <h2>Welcome to MIDI Maker Studio</h2>
                   <p>
-                    Generate professional multitrack MIDI compositions using Google Magenta AI —
-                    MusicVAE, ImprovRNN, and DrumsRNN — with full song structure and stem export.
+                    Generate multitrack songs in the style you pick — the drums, bass, chords, and melody follow that genre, then play back on sampled instruments.
                   </p>
                   <ul>
-                    <li>20 genres — Pop, Rock, Hip-Hop, House, Techno, Industrial, Jazz, and more</li>
-                    <li>Multi-track stems — Drums, Bass, Chords, Melody, Pads, Arpeggios</li>
+                    <li>20 genres — Pop, Rock, Hip-Hop, House, Techno, Jazz, Reggae, and more</li>
+                    <li>Sampled drums, bass, guitar, keys, strings, brass, and synths</li>
                     <li>Play &amp; pause with live piano roll preview</li>
                     <li>Export full song or individual stems for your DAW</li>
                   </ul>
